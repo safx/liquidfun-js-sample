@@ -42,7 +42,7 @@
         var jd = new b2RevoluteJointDef();
         //jd.motorSpeed = 0.05 * Math.PI;
         jd.maxMotorTorque = 1e7;
-        jd.enableMotor = true;
+        jd.enableMotor = false;
         this.joint = jd.InitializeAndCreate(ground, body, new b2Vec2(0, 1));
         this.time = 0;
 
@@ -92,7 +92,7 @@
       }
 
       var raster = new Raster('2308f72210d0c62c223a871e4aac11ee.webp');
-      raster.visible = true;
+      raster.visible = false;
       raster.on('load', function() {
           createElasticParticles(raster)
       });
