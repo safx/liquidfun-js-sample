@@ -1,143 +1,142 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.9.18/paper-full.js"></script>
-  <script src="liquidfun.js"></script>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.9.18/paper-full.js"></script>
+    <script src="liquidfun.js"></script>
+  </head>
 
-<body>
+  <body>
+    <script type="text/paperscript" canvas="canvas-1">
 
-<script type="text/paperscript" canvas="canvas-1">
+      world = null;
 
-world = null;
+      function createElasticParticles() {
+        var gravity = new b2Vec2(0, -10);
+        world = new b2World(gravity);
 
-function createElasticParticles() {
-  var gravity = new b2Vec2(0, -10);
-  world = new b2World(gravity);
+        var bd = new b2BodyDef();
+        var ground = world.CreateBody(bd);
 
-  var bd = new b2BodyDef();
-  var ground = world.CreateBody(bd);
+        bd.type = b2_dynamicBody;
+        bd.allowSleep = false;
+        bd.position.Set(0, 1);
+        var body = world.CreateBody(bd);
 
-  bd.type = b2_dynamicBody;
-  bd.allowSleep = false;
-  bd.position.Set(0, 1);
-  var body = world.CreateBody(bd);
+        var b1 = new b2PolygonShape();
+        b1.SetAsBoxXYCenterAngle(0.05, 1, new b2Vec2(1, 0), 0);
+        body.CreateFixtureFromShape(b1, 5);
 
-  var b1 = new b2PolygonShape();
-  b1.SetAsBoxXYCenterAngle(0.05, 1, new b2Vec2(1, 0), 0);
-  body.CreateFixtureFromShape(b1, 5);
+        var b2 = new b2PolygonShape();
+        b2.SetAsBoxXYCenterAngle(0.05, 1, new b2Vec2(-1, 0), 0);
+        body.CreateFixtureFromShape(b2, 5);
 
-  var b2 = new b2PolygonShape();
-  b2.SetAsBoxXYCenterAngle(0.05, 1, new b2Vec2(-1, 0), 0);
-  body.CreateFixtureFromShape(b2, 5);
+        var b3 = new b2PolygonShape();
+        b3.SetAsBoxXYCenterAngle(2, 0.05, new b2Vec2(0, 1), 0);
+        body.CreateFixtureFromShape(b3, 5);
 
-  var b3 = new b2PolygonShape();
-  b3.SetAsBoxXYCenterAngle(2, 0.05, new b2Vec2(0, 1), 0);
-  body.CreateFixtureFromShape(b3, 5);
+        var b4 = new b2PolygonShape();
+        b4.SetAsBoxXYCenterAngle(2, 0.05, new b2Vec2(0, -1), 0);
+        body.CreateFixtureFromShape(b4, 5);
 
-  var b4 = new b2PolygonShape();
-  b4.SetAsBoxXYCenterAngle(2, 0.05, new b2Vec2(0, -1), 0);
-  body.CreateFixtureFromShape(b4, 5);
+        var jd = new b2RevoluteJointDef();
+        //jd.motorSpeed = 0.05 * Math.PI;
+        jd.maxMotorTorque = 1e7;
+        jd.enableMotor = true;
+        this.joint = jd.InitializeAndCreate(ground, body, new b2Vec2(0, 1));
+        this.time = 0;
 
-  var jd = new b2RevoluteJointDef();
-  //jd.motorSpeed = 0.05 * Math.PI;
-  jd.maxMotorTorque = 1e7;
-  jd.enableMotor = true;
-  this.joint = jd.InitializeAndCreate(ground, body, new b2Vec2(0, 1));
-  this.time = 0;
+        // setup particles
+        var psd = new b2ParticleSystemDef();
+        psd.radius = 0.04;
+        psd.dampingStrength = 0.8;
 
-  // setup particles
-  var psd = new b2ParticleSystemDef();
-  psd.radius = 0.04;
-  psd.dampingStrength = 0.8;
+        var particleSystem = world.CreateParticleSystem(psd);
+        var box = new b2PolygonShape();
+        box.SetAsBoxXYCenterAngle(0.9, 0.9, new b2Vec2(0, 1.0), 0);
 
-  var particleSystem = world.CreateParticleSystem(psd);
-  var box = new b2PolygonShape();
-  box.SetAsBoxXYCenterAngle(0.9, 0.9, new b2Vec2(0, 1.0), 0);
+        var particleGroupDef = new b2ParticleGroupDef();
+        particleGroupDef.shape = box;
+        particleGroupDef.flags = b2_elasticParticle;
+        var particleGroup = particleSystem.CreateParticleGroup(particleGroupDef);
 
-  var particleGroupDef = new b2ParticleGroupDef();
-  particleGroupDef.shape = box;
-  particleGroupDef.flags = b2_elasticParticle;
-  var particleGroup = particleSystem.CreateParticleGroup(particleGroupDef);
+          setRasterColors(particleSystem, raster);
+      }
 
-    setRasterColors(particleSystem, raster);
-}
+      function setRasterColors(particleSystem, raster) {
+          var color = particleSystem.GetColorBuffer();
+          var width = raster.width;
+          var height = raster.height;
+          var ww = width / 31
+          var hh = height / 30
 
-function setRasterColors(particleSystem, raster) {
-    var color = particleSystem.GetColorBuffer();
-    var width = raster.width;
-    var height = raster.height;
-    var ww = width / 31
-    var hh = height / 30
+          var c = 0;
+          for (var y = 0; y < 30; ++y) {
+              for (var x = 0; x < 31; ++x) {
+                  var rect = new Rectangle(x * ww - width/2, height/2 - hh - y * hh, ww, hh);
+      	    var col = raster.getAverageColor(rect);
+                  if (col) {
+                      color[c]   = col.red * 255;
+                      color[c+1] = col.green * 255;
+                      color[c+2] = col.blue * 255;
+                  } else {
+                      color[c]   = 240;
+                      color[c+1] = 240;
+                      color[c+2] = 200;
+                  }
+                  c += 4;
+              }
+          }
 
-    var c = 0;
-    for (var y = 0; y < 30; ++y) {
-        for (var x = 0; x < 31; ++x) {
-            var rect = new Rectangle(x * ww - width/2, height/2 - hh - y * hh, ww, hh);
-	    var col = raster.getAverageColor(rect);
-            if (col) {
-                color[c]   = col.red * 255;
-                color[c+1] = col.green * 255;
-                color[c+2] = col.blue * 255;
-            } else {
-                color[c]   = 240;
-                color[c+1] = 240;
-                color[c+2] = 200;
-            }
-            c += 4;
-        }
-    }
+          createCirclePaths(particleSystem);
+      }
 
-    createCirclePaths(particleSystem);
-}
+      var raster = new Raster('2308f72210d0c62c223a871e4aac11ee.webp');
+      raster.visible = true;
+      raster.on('load', function() {
+          createElasticParticles(raster)
+      });
 
-var raster = new Raster('2308f72210d0c62c223a871e4aac11ee.webp');
-raster.visible = false;
-raster.on('load', function() {
-    createElasticParticles(raster)
-});
+      var circlePaths = [];
+      function createCirclePaths(system) {
+          var particles = system.GetPositionBuffer();
+          var color = system.GetColorBuffer();
+          var maxParticles = particles.length
 
-var circlePaths = [];
-function createCirclePaths(system) {
-    var particles = system.GetPositionBuffer();
-    var color = system.GetColorBuffer();
-    var maxParticles = particles.length
+          for (var i = 0, c = 0, n = 0; i < maxParticles; i += 2, c += 4, ++n) {
+      	var circle = new Path.Circle({
+      	    radius: system.radius * 150,
+                  fillColor: new Color(color[c] / 255, color[c+1] / 255, color[c+2] / 255)
+      	});
+      	circlePaths.push(circle);
+          }
+      }
 
-    for (var i = 0, c = 0, n = 0; i < maxParticles; i += 2, c += 4, ++n) {
-	var circle = new Path.Circle({
-	    radius: system.radius * 150,
-            fillColor: new Color(color[c] / 255, color[c+1] / 255, color[c+2] / 255)
-	});
-	circlePaths.push(circle);
-    }
-}
+      function drawParticleSystem(system) {
+          var particles = system.GetPositionBuffer();
+          var maxParticles = particles.length
+          for (var i = 0, c = 0, n = 0; i < maxParticles; i += 2, c += 4, ++n) {
+              circlePaths[n].position.x = particles[i] * 200 + 400;
+              circlePaths[n].position.y = - particles[i+1] * 200 + 400;
+          }
+      }
 
-function drawParticleSystem(system) {
-    var particles = system.GetPositionBuffer();
-    var maxParticles = particles.length
-    for (var i = 0, c = 0, n = 0; i < maxParticles; i += 2, c += 4, ++n) {
-        circlePaths[n].position.x = particles[i] * 200 + 400;
-        circlePaths[n].position.y = - particles[i+1] * 200 + 400;
-    }
-}
+      function onFrame(event) {
+          if (!world) return;
 
-function onFrame(event) {
-    if (!world) return;
+          var timeStep = 1.0 / 60.0;
+          var velocityIterations = 8;
+          var positionIterations = 3;
 
-    var timeStep = 1.0 / 60.0;
-    var velocityIterations = 8;
-    var positionIterations = 3;
-    
-    world.Step(timeStep, velocityIterations, positionIterations);
-    
-    for (var i = 0, max = world.particleSystems.length; i < max; i++) {
-        drawParticleSystem(world.particleSystems[i]);
-    }
-}
-</script>
-<div class="canvas">
-<canvas resize="true" id="canvas-1" style="background:#f2f2f2"></canvas>
-</div>
-</body>
+          world.Step(timeStep, velocityIterations, positionIterations);
+
+          for (var i = 0, max = world.particleSystems.length; i < max; i++) {
+              drawParticleSystem(world.particleSystems[i]);
+          }
+      }
+    </script>
+    <div class="canvas">
+      <canvas resize="true" id="canvas-1" style="background:#f2f2f2"></canvas>
+    </div>
+  </body>
 </html>
